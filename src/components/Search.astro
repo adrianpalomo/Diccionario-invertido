@@ -1,0 +1,91 @@
+---
+export const prerender = false;
+---
+
+<section class="flex w-full gap-2">
+  <form id="searchForm" class="flex w-full justify-center gap-4">
+    <input
+      id="searchInput"
+      type="text"
+      placeholder="Escribe todo lo que sepas"
+      class="w-xl rounded-lg border border-gray-300 px-4 py-2"
+    />
+    <button
+      type="submit"
+      class="rounded-lg bg-blue-500 px-6 py-2 text-white transition-colors hover:bg-blue-600"
+    >
+      Buscar
+    </button>
+  </form>
+</section>
+
+<script is:inline type="module">
+  const form = document.getElementById("searchForm");
+  const input = document.getElementById("searchInput");
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = input.value.trim();
+    /*  if (!query) return; */
+
+    try {
+      // Llamada a la API de OpenAI
+      const openaiResponse = await fetch("/api/openai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const openaiData = await openaiResponse.json();
+
+      // Suponemos que openaiData.words es un array, ej: ["hola", "mundo"]
+      const words = openaiData.words;
+      console.log("words", words);
+
+      const resultsSection = document.getElementById("results");
+      resultsSection.innerHTML =
+        "<p class='text-center'>Buscando definiciones...</p>";
+
+      // Para cada palabra, consulta la API de la RAE
+      const definitionsResults = await Promise.all(
+        words.map(async (word) => {
+          try {
+            const res = await fetch("/api/rae", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ word }),
+            });
+            return await res.json();
+          } catch (err) {
+            return { word, error: err.message };
+          }
+        })
+      );
+
+      console.log("definitionsResults", definitionsResults);
+
+      // Renderizar resultados de forma bonita
+      resultsSection.innerHTML = "";
+      definitionsResults.forEach((item) => {
+        if (item.error) {
+          resultsSection.innerHTML += `
+            <div class="mb-4 p-4 border border-red-300 rounded">
+              <h3 class="text-xl font-bold">${item.word}</h3>
+              <p class="text-red-600">Error: ${item.error}</p>
+            </div>
+          `;
+        } else {
+          resultsSection.innerHTML += `
+            <div class="mb-4 p-4 border border-gray-300 rounded">
+              <a href="https://dle.rae.es/${item.word}" target="_blank"><h3 class="text-xl font-bold">${item.word}</h3></a>
+              <ul class="list-disc pl-5">
+                ${item.definitions.map((def) => `<li>${def}</li>`).join("")}
+              </ul>
+            </div>
+          `;
+        }
+      });
+    } catch (error) {
+      console.error("Error en la búsqueda:", error);
+    }
+  });
+</script>
