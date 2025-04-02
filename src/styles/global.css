@@ -2,35 +2,40 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-    --color-theme-primary: #343434;
-    --color-theme-secondary: #00204a;
-    --color-theme-tertiary: #454551;
-    --color-theme-remark: #dd343a;
-    --color-theme-text-light: #eaeaea;
-    --color-theme-text-light2: #dbdbdb;
-    --color-theme-text-light3: #afafaf;
-    --color-theme-text-dark: #0e0e0e;
-    --color-theme-text-light-hover: #a3a3a3;
-    --color-theme-text-dark-hover: #e2e2e2;
+  --color-theme-primary: #343434;
+  --color-theme-secondary: #00204a;
+  --color-theme-tertiary: #454551;
+  --color-theme-remark: #dd343a;
+  --color-theme-text-light: #eaeaea;
+  --color-theme-text-light2: #dbdbdb;
+  --color-theme-text-light3: #afafaf;
+  --color-theme-text-dark: #0e0e0e;
+  --color-theme-text-light-hover: #a3a3a3;
+  --color-theme-text-dark-hover: #e2e2e2;
 }
 
 body {
-    color: black;
+  color: rgb(34, 34, 34);
 }
 
 .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 a {
-    transition-duration: 300ms;
+  transition-duration: 300ms;
 }
 
 a:hover {
-   
+  color: #5d5d5d;
+}
+
+::selection {
+  background-color: #8c8c8c;
+  color: white;
 }

@@ -6,10 +6,10 @@ import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-    vite: {
-        plugins: [tailwindcss()],
-    },
-    site: "https://adrianpalomo.com",
-    integrations: [sitemap()],
-    output: 'server',
+  vite: {
+    plugins: [tailwindcss()],
+  },
+  site: "https://buscador-palabras.es",
+  integrations: [sitemap()],
+  output: "server",
 });

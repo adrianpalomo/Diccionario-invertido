@@ -5,10 +5,14 @@ import Search from "@/components/Search.astro";
 import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout>
-  <div class="flex w-full flex-col gap-6">
+<Layout
+  title="Buscador de Palabras"
+  description="Buscador de Palabras es una herramienta online que utiliza inteligencia artificial y la base de datos de la Real Academia Española para ayudarte a buscar palabras, definiciones y sugerencias de forma rápida y sencilla."
+>
+  <main id="content" class="flex w-full flex-col gap-4">
     <Search />
-     <Results />
-    <!-- <Guide /> -->
-  </div>
+    <Results />
+    <hr class="my-8" />
+    <Guide />
+  </main>
 </Layout>

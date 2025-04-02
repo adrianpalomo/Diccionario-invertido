@@ -1,5 +1,22 @@
 import { RAE } from "rae-api";
 
+// Función auxiliar para reintentar una operación hasta 3 veces en total.
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  attempts = 2,
+): Promise<T> {
+  let lastError;
+  for (let i = 0; i < attempts; i++) {
+    console.log("Attempt", i + 1);
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
 export async function POST({ request }) {
   try {
     const { word } = await request.json();
@@ -10,22 +27,43 @@ export async function POST({ request }) {
       );
     }
 
-    const rae = new RAE(); // Puedes habilitar debug pasando true: new RAE(true)
-    const searchResult = await rae.searchWord(word);
+    // Intentamos obtener las definiciones de la palabra (hasta 3 veces).
+    let result;
+    try {
+      const rae = new RAE();
+      const searchResult = await retryOperation(() => rae.searchWord(word));
 
-    if (!searchResult.getRes() || searchResult.getRes().length === 0) {
+      if (!searchResult.results || searchResult.results.length === 0) {
+        return new Response(
+          JSON.stringify({
+            word,
+            definitions: [
+              "Esta palabra es válida pero no se encuentra en el diccionario de la Real Academia Española.",
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      const wordId = searchResult.results[0].id;
+
+      result = await rae.fetchWord(wordId);
+    } catch (error) {
+      // Si tras 3 intentos no se pueden obtener las definiciones, devolvemos un fallback.
       return new Response(
-        JSON.stringify({ error: `No se encontró la palabra "${word}"` }),
-        { status: 404, headers: { "Content-Type": "application/json" } },
+        JSON.stringify({
+          word,
+          definitions: [
+            "No se han podido obtener las definiciones. Haz click sobre la palabra para ir a la definición en el diccionario de la RAE.",
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    const wordId = searchResult.getRes()[0].getId();
-    const result = await rae.fetchWord(wordId);
-    const definitions = result.getDefinitions();
-
-    // Mapear cada definición a una cadena
-    const defs = definitions.map((def) => def.getDefinition());
+    const definitions = result.definitions;
+    // Mapear cada definición a una cadena.
+    const defs = definitions.map((def) => def.content);
 
     return new Response(JSON.stringify({ word, definitions: defs }), {
       status: 200,

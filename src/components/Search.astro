@@ -1,51 +1,225 @@
 ---
 export const prerender = false;
+import SearchIcon from "./icon/Search.astro";
+import Spinner from "./icon/Spinner.astro";
 ---
 
-<section class="flex w-full gap-2">
-  <form id="searchForm" class="flex w-full justify-center gap-4">
-    <input
-      id="searchInput"
-      type="text"
-      placeholder="Escribe todo lo que sepas"
-      class="w-xl rounded-lg border border-gray-300 px-4 py-2"
-    />
-    <button
-      type="submit"
-      class="rounded-lg bg-blue-500 px-6 py-2 text-white transition-colors hover:bg-blue-600"
+<section
+  id="searchSection"
+  class="relative flex h-[50dvh] w-full flex-col items-center justify-center gap-2 md:h-[65dvh]"
+>
+  <a class="mb-8 flex items-center gap-2" href="/">
+    <img src="/logo.webp" alt="Buscador de palabras" class="h-auto w-8" />
+    <h1 class="text-2xl font-bold">Buscador de palabras</h1>
+  </a>
+  <form id="searchForm" class="flex w-full items-center justify-center">
+    <div
+      id="searchContainer"
+      class="relative flex min-h-[56px] w-full max-w-2xl gap-2 rounded-[28px] border border-gray-200 py-2 pr-3 pl-6 shadow-lg sm:pr-1"
     >
-      Buscar
-    </button>
+      <div class="flex w-11/12 items-center justify-center">
+        <textarea
+          id="searchInput"
+          rows="1"
+          placeholder="¿Qué palabra buscas?"
+          class="auto-resize w-full resize-none overflow-y-auto focus:outline-none"
+        ></textarea>
+      </div>
+      <div class="flex w-1/12 items-center justify-center">
+        <button
+          id="searchButton"
+          type="submit"
+          disabled
+          class="rounded-full bg-black p-2 text-white transition-colors duration-300 hover:cursor-pointer disabled:hover:cursor-not-allowed"
+        >
+          <SearchIcon id="searchIcon" class="block h-6 w-auto" />
+          <Spinner id="spinner" class="hidden h-5 w-auto animate-spin" />
+        </button>
+      </div>
+      <div
+        id="recentSearches"
+        class="absolute top-full right-[-1px] left-[-1px] hidden rounded-b-[28px] border border-t-0 border-gray-200 bg-white p-2 shadow-lg"
+      >
+      </div>
+    </div>
   </form>
+  <div id="errorMessage" class="mt-2 text-center text-red-600"></div>
 </section>
+
+<style>
+  #searchSection {
+    transition: height 0.5s ease-in-out;
+  }
+  #searchSection.move-up {
+    height: 30dvh !important;
+  }
+
+  .dropdown-item {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
 
 <script is:inline type="module">
   const form = document.getElementById("searchForm");
   const input = document.getElementById("searchInput");
+  const button = document.getElementById("searchButton");
+  const searchSection = document.getElementById("searchSection");
+  const spinner = document.getElementById("spinner");
+  const searchContainer = document.getElementById("searchContainer");
+  const errorMessage = document.getElementById("errorMessage");
+  const searchIcon = document.getElementById("searchIcon");
+  const recentSearchesEl = document.getElementById("recentSearches");
+
+  // Función para ajustar la altura del textarea de forma suave, hasta 5 filas como máximo.
+  const autoResize = () => {
+    input.style.height = "auto";
+    const lineHeight = parseFloat(getComputedStyle(input).lineHeight);
+    const maxHeight = lineHeight * 5;
+    const newHeight = input.scrollHeight;
+    input.style.height = (newHeight > maxHeight ? maxHeight : newHeight) + "px";
+  };
+
+  // Actualiza el estado del botón: si hay texto se activa (fondo negro), sino se muestra gris.
+  const updateButtonState = () => {
+    if (input.value.trim().length > 0) {
+      button.disabled = false;
+      button.classList.remove("bg-gray-400");
+      button.classList.add("bg-black", "hover:bg-black/70");
+    } else {
+      button.disabled = true;
+      button.classList.remove("bg-black", "hover:bg-black/70");
+      button.classList.add("bg-gray-400");
+    }
+  };
+
+  // Funciones para manejar el cache de búsquedas en localStorage.
+  function getRecentSearches() {
+    const stored = localStorage.getItem("recentSearches");
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  function saveRecentSearch(query) {
+    let searches = getRecentSearches();
+    // Elimina duplicados (sin distinguir mayúsculas)
+    searches = searches.filter(
+      (item) => item.toLowerCase() !== query.toLowerCase(),
+    );
+    // Añade la búsqueda al principio.
+    searches.unshift(query);
+    // Limitar a 5 búsquedas recientes.
+    if (searches.length > 5) searches = searches.slice(0, 5);
+    localStorage.setItem("recentSearches", JSON.stringify(searches));
+  }
+
+  function renderRecentSearches() {
+    const searches = getRecentSearches();
+    // Si no hay búsquedas, aseguramos que el contenedor tenga bordes redondeados completos
+    if (searches.length === 0) {
+      recentSearchesEl.classList.add("hidden");
+      searchContainer.classList.remove("rounded-b-none");
+      return;
+    }
+    recentSearchesEl.innerHTML = "";
+    searches.forEach((query) => {
+      const item = document.createElement("div");
+      item.textContent = query;
+      item.className =
+        "dropdown-item px-4 py-2 hover:bg-gray-100 cursor-pointer rounded-[20px]";
+      item.addEventListener("click", () => {
+        input.value = query;
+        updateButtonState();
+        autoResize();
+        recentSearchesEl.classList.add("hidden");
+        form.dispatchEvent(new Event("submit"));
+        searchContainer.classList.remove("rounded-b-none");
+      });
+      recentSearchesEl.appendChild(item);
+    });
+    recentSearchesEl.classList.remove("hidden");
+    // Si hay historial, quitar el redondeado inferior para integrarlo con el dropdown
+    searchContainer.classList.add("rounded-b-none");
+  }
+
+  // Mostrar el dropdown al hacer focus en el textarea
+  input.addEventListener("focus", () => {
+    renderRecentSearches();
+  });
+
+  // Ocultar el dropdown si se hace clic fuera
+  document.addEventListener("click", (e) => {
+    if (!searchContainer.contains(e.target)) {
+      recentSearchesEl.classList.add("hidden");
+      searchContainer.classList.remove("rounded-b-none");
+    }
+  });
+
+  // Cada vez que se escribe, se ajusta la altura y se actualiza el botón.
+  input.addEventListener("input", () => {
+    autoResize();
+    updateButtonState();
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      form.dispatchEvent(new Event("submit"));
+    }
+  });
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    errorMessage.innerText = "";
     const query = input.value.trim();
-    /*  if (!query) return; */
+    if (query === "") return; // Prevenir búsqueda vacía
+
+    // Actualiza la URL con el parámetro q.
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set("q", query);
+    window.history.pushState({}, "", newUrl);
+
+    // Desactivar el botón durante la validación y búsqueda.
+    button.disabled = true;
+    button.classList.remove("bg-black", "hover:bg-black/70");
+    button.classList.add("bg-gray-400");
+
+    // Mostrar el spinner y ocultar el SearchIcon.
+    spinner.classList.remove("hidden");
+    searchIcon.classList.add("hidden");
 
     try {
-      // Llamada a la API de OpenAI
+      // Primero, valida la consulta con aiValidator.
+      const validatorResponse = await fetch("/api/aiValidator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const validatorData = await validatorResponse.json();
+
+      if (!validatorData.valid) {
+        errorMessage.innerText =
+          validatorData.reason ||
+          "Consulta inválida. Prueba con una definición más clara.";
+        spinner.classList.add("hidden");
+        searchIcon.classList.remove("hidden");
+        return;
+      }
+
+      // Guardar la búsqueda en el caché del usuario.
+      saveRecentSearch(query);
+
+      // Continuar con la búsqueda normal: llamar a la API de OpenAI.
       const openaiResponse = await fetch("/api/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
       const openaiData = await openaiResponse.json();
-
-      // Suponemos que openaiData.words es un array, ej: ["hola", "mundo"]
       const words = openaiData.words;
-      console.log("words", words);
 
-      const resultsSection = document.getElementById("results");
-      resultsSection.innerHTML =
-        "<p class='text-center'>Buscando definiciones...</p>";
-
-      // Para cada palabra, consulta la API de la RAE
+      // Para cada palabra, consulta la API de la RAE.
       const definitionsResults = await Promise.all(
         words.map(async (word) => {
           try {
@@ -56,36 +230,59 @@ export const prerender = false;
             });
             return await res.json();
           } catch (err) {
-            return { word, error: err.message };
+            return { word, error: err.details };
           }
-        })
+        }),
       );
 
-      console.log("definitionsResults", definitionsResults);
+      // Cambiar la altura del section para subir el buscador.
+      searchSection.classList.add("move-up");
 
-      // Renderizar resultados de forma bonita
+      // Mostrar los resultados con animación (suponiendo que existe un contenedor con id "results").
+      const resultsSection = document.getElementById("results");
       resultsSection.innerHTML = "";
-      definitionsResults.forEach((item) => {
+      definitionsResults.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className =
+          "result-item mb-4 p-4  transition-all duration-500 opacity-0 translate-y-[-10px]";
         if (item.error) {
-          resultsSection.innerHTML += `
-            <div class="mb-4 p-4 border border-red-300 rounded">
-              <h3 class="text-xl font-bold">${item.word}</h3>
-              <p class="text-red-600">Error: ${item.error}</p>
-            </div>
+          div.innerHTML = `
+            <h3 class="text-xl font-bold">${item.word}</h3>
+            <p class="text-red-600">Error: ${item.error}</p>
           `;
         } else {
-          resultsSection.innerHTML += `
-            <div class="mb-4 p-4 border border-gray-300 rounded">
-              <a href="https://dle.rae.es/${item.word}" target="_blank"><h3 class="text-xl font-bold">${item.word}</h3></a>
-              <ul class="list-disc pl-5">
-                ${item.definitions.map((def) => `<li>${def}</li>`).join("")}
-              </ul>
-            </div>
+          div.innerHTML = `
+            <a href="https://dle.rae.es/${item.word}" target="_blank">
+              <h3 class="text-xl font-bold underline">${item.word}</h3>
+            </a>
+            <ul class="list-disc pl-5">
+              ${item.definitions.map((def) => `<li>${def}</li>`).join("")}
+            </ul>
           `;
         }
+        resultsSection.appendChild(div);
+        setTimeout(() => {
+          div.classList.remove("opacity-0", "translate-y-[-10px]");
+        }, 100 * index);
       });
     } catch (error) {
-      console.error("Error en la búsqueda:", error);
+      console.error("Error en la validación o búsqueda:", error);
+      errorMessage.innerText =
+        "Ha ocurrido un error interno. Por favor, inténtalo de nuevo.";
+    } finally {
+      updateButtonState();
+      spinner.classList.add("hidden");
+      searchIcon.classList.remove("hidden");
     }
   });
+
+  // Al cargar la página, si existe el parámetro "q", se autocompleta y se dispara la búsqueda.
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialQuery = urlParams.get("q");
+  if (initialQuery) {
+    input.value = initialQuery;
+    updateButtonState();
+    autoResize();
+    form.dispatchEvent(new Event("submit"));
+  }
 </script>

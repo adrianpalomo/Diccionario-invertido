@@ -1,0 +1,87 @@
+---
+import RichResults from "@/components/RichResults.astro";
+import type { Preload } from "@/types/Preload";
+
+interface Props {
+  title: string;
+  description: string;
+  preload?: Array<Preload>;
+  canonical?: string;
+  image?: string;
+}
+
+const {
+  title = "Buscador de Palabras",
+  description,
+  preload,
+  canonical,
+  image = "https:/buscador-palabras.es/og.webp",
+} = Astro.props as Props;
+
+const determineCanonicalURL = () => {
+  if (Astro.url.host.includes("localhost")) return "http://localhost:4321";
+  return canonical || Astro.url.pathname;
+};
+
+const canonicalURL = new URL(determineCanonicalURL(), Astro.site);
+---
+
+<title>{title}</title>
+<meta
+  name="description"
+  content={description ||
+    "Buscador de Palabras es una herramienta online que utiliza inteligencia artificial y la base de datos de la Real Academia Española para ayudarte a buscar palabras, definiciones y sugerencias de forma rápida y sencilla."}
+/>
+
+<meta charset="UTF-8" />
+
+{
+  preload?.map(({ href, as, type, rel = "preload", crossorigin }) => (
+    <link {rel} {href} {as} {type} {crossorigin} />
+  ))
+}
+
+<link rel="canonical" href={canonicalURL} />
+
+<meta charset="UTF-8" />
+<link rel="sitemap" href="/sitemap-index.xml" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#fff" />
+
+<!-- Meta Keywords ajustadas para Buscador de Palabras -->
+<meta
+  name="keywords"
+  content="buscador de palabras, buscar palabras, diccionario inverso, buscar palabra en la rae, al revés rae, averiguar palabras, ayuda palabras, busca en el diccionario la palabra, busca palabras online, busqueda de la palabra, diccionario al revés, encontrar la palabra, encuentra palabras, rae inverso, real academia española buscar palabras"
+/>
+<meta name="author" content="Adrián Palomo" />
+<meta name="robots" content="index, follow" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://buscador-palabras.es/" />
+<meta
+  property="og:title"
+  content="Buscador de Palabras | Herramienta Online para Buscar Palabras"
+/>
+<meta property="og:site_name" content="Buscador de Palabras" />
+<meta
+  property="og:description"
+  content="Utiliza inteligencia artificial y la base de datos de la Real Academia Española para buscar palabras, definiciones y sugerencias basadas en tu descripción. ¡Averigua la palabra correcta de forma rápida y sencilla!"
+/>
+<meta property="og:image" content={image} />
+<meta property="og:locale" content="es_ES" />
+
+<!-- Apple -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="black-translucent"
+/>
+<meta name="apple-mobile-web-app-title" content="Buscador de Palabras" />
+
+<!-- Microsoft -->
+<meta name="msapplication-TileColor" content="#fff" />
+<meta name="msapplication-config" content="none" />
+
+<link rel="icon" type="image/png" href="/Fav.webp" />
+<RichResults />

@@ -1,7 +1,13 @@
-<section class="flex w-full flex-col gap-2">
-  <h2 class="text-2xl font-bold">Guía</h2>
-  <p class="text-sm text-gray-500">
-    Escribe todo lo que sepas sobre la palabra que quieres buscar y el
-    diccionario invertido te dará el resultado.
-  </p>
+---
+import { getCollection, render } from "astro:content";
+
+const guide = await getCollection("guide");
+const guideContent = guide[0];
+const { Content } = await render(guideContent);
+---
+
+<section class="mb-14 flex w-full flex-col items-center">
+  <article class="prose prose-stone">
+    <Content />
+  </article>
 </section>

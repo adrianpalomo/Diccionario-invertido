@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 
-export async function POST({ params, request }) {
+export async function POST({ request }) {
   try {
     // Extrae el cuerpo de la petición
     const { query } = await request.json();
@@ -18,18 +18,11 @@ export async function POST({ params, request }) {
 
     // Llama a la API de OpenAI usando el prompt adecuado
     const response = await client.responses.create({
-      model: "gpt-4o", // Asegúrate de que este modelo es correcto o usa otro modelo, por ejemplo "gpt-3.5-turbo"
-      input: [
-        {
-          role: "developer",
-          content:
-            "Eres un experto en castellano. Dada una definición, responde con hasta tres palabras simples (cada una de una sola palabra, válidas en el diccionario). Ej: 'recipiente para líquidos' → vaso, taza, botella.",
-        },
-        {
-          role: "user",
-          content: query,
-        },
-      ],
+      model: "gpt-4o",
+      temperature: 0.5,
+      instructions:
+        "Eres un experto en castellano. Dada una definición, responde con hasta tres palabras simples (cada una de una sola palabra, válidas en el diccionario). Intenta no poner palabras que ya estén en la definición, a no ser que sean necesarias para definirla. Ej: 'recipiente para líquidos' → vaso, taza, botella.",
+      input: query,
       text: {
         format: {
           type: "json_schema",
