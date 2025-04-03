@@ -1,48 +1,26 @@
-# Astro Starter Kit: Basics
+# Buscador de Palabras
 
-```sh
-npm create astro@latest -- --template basics
-```
+Buscador de Palabras es una herramienta web que utiliza inteligencia artificial junto con la base de datos de la Real Academia Española (RAE) para ayudarte a **buscar palabras**, obtener definiciones y sugerencias de manera rápida y sencilla.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## Características
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- **Búsqueda Inteligente:**  
+  Introduce una breve descripción o definición y la herramienta sugerirá la palabra correcta mediante IA.
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+- **Integración con la RAE:**  
+  Consulta la información oficial de la Real Academia Española para obtener definiciones precisas.
 
-## 🚀 Project Structure
+- **Historial de Búsquedas:**  
+  Guarda tus búsquedas recientes en el navegador (localStorage) y muéstralas en un dropdown al hacer focus, similar a Google.
 
-Inside of your Astro project, you'll see the following folders and files:
+- **Actualización de URL:**  
+  El parámetro `q` en la URL permite compartir y retomar búsquedas previas.
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+- **Diseño Responsive:**  
+  Optimizado para funcionar correctamente en dispositivos móviles y en pantallas de distintos tamaños.
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Tecnologías Utilizadas
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- [Astro](https://astro.build/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- JavaScript (ES6)
