@@ -246,6 +246,15 @@ import Spinner from "./icon/Spinner.astro";
         })
       );
 
+      // Limpiar los resultados anteriores.
+      definitionsResults.forEach((item) => {
+        item.definitions = item.definitions
+          .replace("Ant.:", " <br/> Antónimos: ")
+          .replace("Sin.:", " <br/> Sinónimos: ")
+          .replace(/(?<=[a-zA-Z])[\d]+/g, "")
+          .replace(/[\d]+(?=[a-zA-Z])/g, "");
+      });
+
       // Cambiar la altura del section para subir el buscador.
       searchSection.classList.add("move-up");
 
