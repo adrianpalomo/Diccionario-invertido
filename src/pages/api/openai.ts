@@ -16,26 +16,31 @@ export async function POST({ request }) {
       apiKey: import.meta.env.OPENAI_API_KEY,
     });
 
-    // Llama a la API de OpenAI usando el prompt adecuado
+    // Prompt combinado para validar la consulta y generar definiciones.
+    const instructions = `
+Eres un experto en castellano. Revisa la siguiente consulta y determina si es válida para buscar definiciones de una palabra. La consulta se considerará válida si contiene una descripción que requiera definir un concepto y no es simplemente una palabra ya definida o un texto sin sentido. Si la consulta es válida, responde con un JSON que contenga: "valid": true, "words": un array de hasta tres palabras simples (cada una de una sola palabra, válidas en el diccionario) que se ajusten a la descripción, sin repetir palabras ya presentes en la consulta. Si la consulta no es válida, responde con un JSON que contenga: "valid": false, "reason": una cadena que explique por qué la consulta es inválida.`;
+
+    // Llamada a la IA con el prompt combinado.
     const response = await client.responses.create({
       model: "gpt-4o",
       temperature: 0.5,
-      instructions:
-        "Eres un experto en castellano. Dada una definición, responde con hasta tres palabras simples (cada una de una sola palabra, válidas en el diccionario). Intenta no poner palabras que ya estén en la definición, a no ser que sean necesarias para definirla. Ej: 'recipiente para líquidos' → vaso, taza, botella.",
+      instructions: instructions,
       input: query,
       text: {
         format: {
           type: "json_schema",
-          name: "definition_list",
+          name: "combined_result",
           schema: {
             type: "object",
             properties: {
+              valid: { type: "boolean" },
+              reason: { type: "string" },
               words: {
                 type: "array",
                 items: { type: "string" },
               },
             },
-            required: ["words"],
+            required: ["valid", "words", "reason"],
             additionalProperties: false,
           },
           strict: true,
@@ -44,11 +49,8 @@ export async function POST({ request }) {
     });
 
     console.log({ response });
-
-    // Extrae el contenido de la respuesta
+    // Extraer el contenido de la respuesta.
     const message = response.output_text;
-
-    // Devuelve el resultado (si la respuesta ya es JSON, o conviértelo si es una cadena)
     let result;
     try {
       result = typeof message === "string" ? JSON.parse(message) : message;

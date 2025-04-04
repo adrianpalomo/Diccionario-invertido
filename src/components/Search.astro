@@ -174,6 +174,7 @@ import Spinner from "./icon/Spinner.astro";
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
+      document.activeElement.blur();
       form.dispatchEvent(new Event("submit"));
     }
   });
@@ -201,34 +202,29 @@ import Spinner from "./icon/Spinner.astro";
     searchIcon.classList.add("hidden");
 
     try {
-      // Primero, valida la consulta con aiValidator.
-      const validatorResponse = await fetch("/api/aiValidator", {
+      // Llamada única a la IA (endpoint combinado).
+      const response = await fetch("/api/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
-      const validatorData = await validatorResponse.json();
+      const data = await response.json();
 
-      if (!validatorData.valid) {
+      // Si la consulta no es válida, mostrar error.
+      if (!data.valid) {
         errorMessage.innerText =
-          validatorData.reason ||
+          data.reason ||
           "Consulta inválida. Prueba con una definición más clara.";
         spinner.classList.add("hidden");
         searchIcon.classList.remove("hidden");
         return;
       }
 
-      // Guardar la búsqueda en el caché del usuario.
+      // Guardar búsqueda en caché.
       saveRecentSearch(query);
 
-      // Continuar con la búsqueda normal: llamar a la API de OpenAI.
-      const openaiResponse = await fetch("/api/openai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-      });
-      const openaiData = await openaiResponse.json();
-      const words = openaiData.words;
+      // Se obtienen las palabras sugeridas en data.words.
+      const words = data.words;
 
       // Para cada palabra, consulta la API de la RAE.
       const definitionsResults = await Promise.all(
@@ -247,24 +243,61 @@ import Spinner from "./icon/Spinner.astro";
       );
 
       // Limpiar los resultados anteriores.
+      // Procesar y formatear las definiciones para incluir sinónimos y antónimos en sublistas.
       definitionsResults.forEach((item) => {
-        item.definitions = item.definitions
-          .replace("Ant.:", " <br/> Antónimos: ")
-          .replace("Sin.:", " <br/> Sinónimos: ")
-          .replace(/(?<=[a-zA-Z])[\d]+/g, "")
-          .replace(/[\d]+(?=[a-zA-Z])/g, "");
+        if (Array.isArray(item.definitions)) {
+          item.definitions = item.definitions.map((def) => {
+            // Eliminar números extra.
+            def = def
+              .replace(/(?<=[a-zA-Z])[\d]+/g, "")
+              .replace(/[\d]+(?=[a-zA-Z])/g, "");
+            let mainDef = def;
+            let synonyms = "";
+            let antonyms = "";
+            if (def.includes("Sin.:")) {
+              const parts = def.split("Sin.:");
+              mainDef = parts[0].trim();
+              const rest = parts[1].trim();
+              if (rest.includes("Antambién")) {
+                const subparts = rest.split("Antambién");
+                synonyms = subparts[0].trim();
+                antonyms = subparts[1].trim();
+              } else {
+                synonyms = rest;
+              }
+            } else if (def.includes("Antambién")) {
+              const parts = def.split("Antambién");
+              mainDef = parts[0].trim();
+              antonyms = parts[1].trim();
+            }
+            // Construir el HTML formateado
+            let html = `<li>${mainDef}`;
+            if (synonyms || antonyms) {
+              html += `<ul class="list-[circle] pl-8">`;
+              if (synonyms) {
+                html += `<li><span class="font-semibold">Sinónimos:</span> ${synonyms}</li>`;
+              }
+              if (antonyms) {
+                html += `<li><span class="font-semibold">Antónimos:</span> ${antonyms}</li>`;
+              }
+              html += `</ul>`;
+            }
+            html += `</li>`;
+            return html;
+          });
+        }
       });
 
       // Cambiar la altura del section para subir el buscador.
       searchSection.classList.add("move-up");
 
-      // Mostrar los resultados con animación (suponiendo que existe un contenedor con id "results").
+      // Mostrar los resultados con animación (se asume que existe un contenedor con id "results").
       const resultsSection = document.getElementById("results");
       resultsSection.innerHTML = "";
       definitionsResults.forEach((item, index) => {
         const div = document.createElement("div");
         div.className =
-          "result-item mb-4 p-4  transition-all duration-500 opacity-0 translate-y-[-10px]";
+          "result-item mb-4 p-4 transition-all duration-500 opacity-0 translate-y-[-10px]";
         if (item.error) {
           div.innerHTML = `
             <h3 class="text-xl font-bold">${item.word}</h3>
@@ -276,7 +309,7 @@ import Spinner from "./icon/Spinner.astro";
               <h3 class="text-xl font-bold underline">${item.word}</h3>
             </a>
             <ul class="list-disc pl-5">
-              ${item.definitions.map((def) => `<li>${def}</li>`).join("")}
+              ${item.definitions.join("")}
             </ul>
           `;
         }
