@@ -7,12 +7,15 @@ import Layout from "../layouts/Layout.astro";
 
 <Layout
   title="Buscador de Palabras"
-  description="Buscador de Palabras es una herramienta online que utiliza inteligencia artificial y la base de datos de la Real Academia Española para ayudarte a buscar palabras, definiciones y sugerencias de forma rápida y sencilla."
+  description="Utiliza inteligencia artificial y la base de datos de la Real Academia Española para buscar palabras, definiciones, expresiones, refranes y locuciones basadas en tu descripción. ¡Averigua lo que estás buscando de forma rápida y sencilla!"
 >
-  <main id="content" class="flex w-full flex-col gap-4">
+  <main
+    id="content"
+    class="flex w-full flex-col gap-4 bg-white text-gray-900 dark:bg-gray-900 dark:text-white"
+  >
     <Search />
     <Results />
-    <hr class="my-8" />
+    <hr class="my-8 border-gray-200 dark:border-gray-700" />
     <Guide />
   </main>
 </Layout>

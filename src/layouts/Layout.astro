@@ -30,7 +30,9 @@ const { title, description, preload, canonical, image } = Astro.props;
     />
     <ClientRouter />
   </head>
-  <body class="flex justify-center">
+  <body
+    class="flex justify-center bg-white text-gray-900 dark:bg-gray-900 dark:text-white"
+  >
     <div class="flex min-h-screen w-full flex-col gap-6 p-6 md:max-w-3xl">
       <div class="mb-auto flex w-full justify-center">
         <slot />

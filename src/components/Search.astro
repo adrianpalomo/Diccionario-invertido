@@ -2,35 +2,26 @@
 export const prerender = false;
 import SearchIcon from "./icon/Search.astro";
 import Spinner from "./icon/Spinner.astro";
+import Logo from "./Logo.astro";
 ---
 
 <section
   id="searchSection"
-  class="relative flex h-[50dvh] w-full flex-col items-center justify-center gap-2 md:h-[65dvh]"
+  class="relative flex h-[60dvh] w-full flex-col items-center justify-center gap-2 bg-white md:h-[70dvh] dark:bg-gray-900"
 >
-  <a class="mb-8 flex items-center gap-2" href="/">
-    <img
-      src="/logo.webp"
-      alt="Logo de buscador de palabras"
-      class="h-auto w-8"
-      aria-label="Logo de buscador de palabras"
-    />
-    <h1 class="text-2xl font-bold" aria-label="Buscador de palabras">
-      Buscador de palabras
-    </h1>
-  </a>
+  <Logo />
   <form id="searchForm" class="flex w-full items-center justify-center">
     <div
       id="searchContainer"
-      class="relative flex min-h-[56px] w-full max-w-2xl gap-4 rounded-[28px] border border-gray-200 py-2 pr-4 pl-6 shadow-lg sm:pr-1"
+      class="relative flex min-h-[56px] w-full max-w-2xl gap-4 rounded-[28px] border border-gray-200 py-2 pr-4 pl-6 shadow-lg sm:pr-1 dark:border-gray-700"
     >
       <div class="flex w-11/12 items-center justify-center">
         <textarea
           aria-label="Buscar"
           id="searchInput"
           rows="1"
-          placeholder="¿Qué palabra buscas?"
-          class="auto-resize w-full resize-none overflow-y-auto focus:outline-none"
+          placeholder=""
+          class="auto-resize w-full resize-none overflow-y-auto bg-white text-gray-900 focus:outline-none dark:bg-gray-900 dark:text-white"
         ></textarea>
       </div>
       <div class="flex w-1/12 items-center justify-center">
@@ -39,15 +30,15 @@ import Spinner from "./icon/Spinner.astro";
           id="searchButton"
           type="submit"
           disabled
-          class="rounded-full bg-black p-2 text-white transition-colors duration-300 hover:cursor-pointer disabled:hover:cursor-not-allowed"
+          class="rounded-full bg-black p-2 text-white transition-colors duration-300 hover:cursor-pointer hover:bg-gray-600 disabled:hover:cursor-not-allowed dark:bg-gray-200 dark:text-black dark:hover:bg-gray-400"
         >
-          <SearchIcon id="searchIcon" class="block h-6 w-auto" />
+          <SearchIcon id="searchIcon" class="block h-7 w-auto" />
           <Spinner id="spinner" class="hidden h-5 w-auto animate-spin" />
         </button>
       </div>
       <div
         id="recentSearches"
-        class="absolute top-full right-[-1px] left-[-1px] hidden rounded-b-[28px] border border-t-0 border-gray-200 bg-white p-2 shadow-lg"
+        class="absolute top-full right-[-1px] left-[-1px] hidden rounded-b-[28px] border border-t-0 border-gray-200 bg-gray-100 p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
       >
       </div>
     </div>
@@ -71,16 +62,74 @@ import Spinner from "./icon/Spinner.astro";
   }
 </style>
 
-<script is:inline type="module">
+<script>
   const form = document.getElementById("searchForm");
-  const input = document.getElementById("searchInput");
-  const button = document.getElementById("searchButton");
+  const input = document.getElementById("searchInput") as HTMLInputElement;
+  const button = document.getElementById("searchButton") as HTMLButtonElement;
   const searchSection = document.getElementById("searchSection");
   const spinner = document.getElementById("spinner");
   const searchContainer = document.getElementById("searchContainer");
   const errorMessage = document.getElementById("errorMessage");
   const searchIcon = document.getElementById("searchIcon");
   const recentSearchesEl = document.getElementById("recentSearches");
+  import { PLACEHOLDERS } from "../consts/placeholders.ts";
+
+  let isTyping = false;
+
+  // Función para simular escritura humana
+  const typeWriterEffect = async (text, element) => {
+    element.placeholder = "";
+    const delay = () => Math.random() * 75 + 25; // Delay aleatorio entre 50ms y 150ms
+    for (let i = 0; i < text.length; i++) {
+      // Si el usuario empieza a escribir o el input tiene foco, salimos del efecto
+      if (isTyping) return;
+      await new Promise((resolve) => setTimeout(resolve, delay()));
+      element.placeholder = text.substring(0, i + 1);
+    }
+  };
+
+  // Función para rotar los placeholders automáticamente
+  const rotatePlaceholders = async () => {
+    while (true) {
+      if (input.value.trim() === "") {
+        const randomPlaceholder =
+          PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)];
+        await typeWriterEffect(randomPlaceholder, input);
+        // Espera 2 segundos mostrando el placeholder
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Borramos el placeholder antes de la siguiente iteración
+
+        input.setAttribute("placeholder", "");
+      }
+      // Espera un poco antes de volver a comprobar
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  };
+
+  // Iniciar la rotación de placeholders
+  rotatePlaceholders();
+
+  // Control de la variable isTyping:
+  // Cuando el usuario escribe, marcamos isTyping en true.
+  input.addEventListener("input", () => {
+    // Si hay texto, se considera que está escribiendo.
+    isTyping = input.value.trim().length > 0;
+    autoResize();
+    updateButtonState();
+  });
+
+  // Al enfocar el input, detenemos el efecto (isTyping true para evitar sobrescribir lo que el usuario escriba)
+  input.addEventListener("focus", () => {
+    isTyping = true;
+    renderRecentSearches();
+  });
+
+  // Al perder el foco, si el input está vacío, reanudamos el efecto.
+  input.addEventListener("blur", () => {
+    if (input.value.trim() === "") {
+      isTyping = false;
+    }
+  });
 
   // Función para ajustar la altura del textarea de forma suave, hasta 5 filas como máximo.
   const autoResize = () => {
@@ -136,7 +185,7 @@ import Spinner from "./icon/Spinner.astro";
       const item = document.createElement("div");
       item.textContent = query;
       item.className =
-        "dropdown-item px-4 py-2 hover:bg-gray-100 cursor-pointer rounded-[20px]";
+        "dropdown-item px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer rounded-[20px]";
       item.addEventListener("click", () => {
         input.value = query;
         updateButtonState();
@@ -181,10 +230,13 @@ import Spinner from "./icon/Spinner.astro";
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    const resultsSection = document.getElementById("results");
     searchContainer.classList.remove("rounded-b-none");
     recentSearchesEl.classList.add("hidden");
     errorMessage.innerText = "";
     const query = input.value.trim();
+
     if (query === "") return; // Prevenir búsqueda vacía
 
     // Actualiza la URL con el parámetro q.
@@ -202,7 +254,7 @@ import Spinner from "./icon/Spinner.astro";
     searchIcon.classList.add("hidden");
 
     try {
-      // Llamada única a la IA (endpoint combinado).
+      // Llamada a la IA (endpoint combinado).
       const response = await fetch("/api/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -210,101 +262,139 @@ import Spinner from "./icon/Spinner.astro";
       });
       const data = await response.json();
 
-      // Si la consulta no es válida, mostrar error.
+      // Si la consulta no es válida, mostrar error y limpiar resultados.
       if (!data.valid) {
         errorMessage.innerText =
-          data.reason ||
+          data.invalid_reason ||
           "Consulta inválida. Prueba con una definición más clara.";
         spinner.classList.add("hidden");
         searchIcon.classList.remove("hidden");
+        resultsSection.innerHTML = "";
         return;
       }
 
       // Guardar búsqueda en caché.
       saveRecentSearch(query);
+      console.log(data);
 
-      // Se obtienen las palabras sugeridas en data.words.
-      const words = data.words;
-
-      // Para cada palabra, consulta la API de la RAE.
-      const definitionsResults = await Promise.all(
-        words.map(async (word) => {
-          try {
-            const res = await fetch("/api/rae", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ word }),
-            });
-            return await res.json();
-          } catch (err) {
-            return { word, error: err.details };
-          }
-        })
+      // Separamos en expresiones compuestas y palabras simples.
+      const compoundExpressions = data.expression.filter(
+        (expr) => !expr.isSimple
       );
+      const simpleWords = data.expression.filter((expr) => expr.isSimple);
 
-      // Limpiar los resultados anteriores.
-      // Procesar y formatear las definiciones para incluir sinónimos y antónimos en sublistas.
-      definitionsResults.forEach((item) => {
-        if (Array.isArray(item.definitions)) {
-          item.definitions = item.definitions.map((def) => {
-            // Eliminar números extra.
-            def = def
-              .replace(/(?<=[a-zA-Z])[\d]+/g, "")
-              .replace(/[\d]+(?=[a-zA-Z])/g, "");
-            let mainDef = def;
-            let synonyms = "";
-            let antonyms = "";
-            if (def.includes("Sin.:")) {
-              const parts = def.split("Sin.:");
-              mainDef = parts[0].trim();
-              const rest = parts[1].trim();
-              if (rest.includes("Antambién")) {
-                const subparts = rest.split("Antambién");
-                synonyms = subparts[0].trim();
-                antonyms = subparts[1].trim();
-              } else {
-                synonyms = rest;
-              }
-            } else if (def.includes("Antambién")) {
-              const parts = def.split("Antambién");
-              mainDef = parts[0].trim();
-              antonyms = parts[1].trim();
-            }
-            // Construir el HTML formateado
-            let html = `<li>${mainDef}`;
-            if (synonyms || antonyms) {
-              html += `<ul class="list-[circle] pl-8">`;
-              if (synonyms) {
-                html += `<li><span class="font-semibold">Sinónimos:</span> ${synonyms}</li>`;
-              }
-              if (antonyms) {
-                html += `<li><span class="font-semibold">Antónimos:</span> ${antonyms}</li>`;
-              }
-              html += `</ul>`;
-            }
-            html += `</li>`;
-            return html;
-          });
-        }
-      });
-
-      // Cambiar la altura del section para subir el buscador.
-      searchSection.classList.add("move-up");
-
-      // Mostrar los resultados con animación (se asume que existe un contenedor con id "results").
-      const resultsSection = document.getElementById("results");
       resultsSection.innerHTML = "";
-      definitionsResults.forEach((item, index) => {
-        const div = document.createElement("div");
-        div.className =
-          "result-item mb-4 p-4 transition-all duration-500 opacity-0 translate-y-[-10px]";
-        if (item.error) {
-          div.innerHTML = `
+
+      // Mostrar expresiones compuestas (se muestran directamente sin listas)
+      if (compoundExpressions.length > 0) {
+        compoundExpressions.forEach((expr) => {
+          if (
+            expr.type !== "Locución" &&
+            expr.type !== "Expresión" &&
+            expr.type !== "Refrán"
+          ) {
+            expr.type = null;
+          }
+        });
+
+        resultsSection.innerHTML += compoundExpressions
+          .map(
+            (expr) => `
+        <div class="result-item mb-4 p-4 transition-all duration-500 opacity-0 translate-y-[-10px]">
+          <div class="flex items-end gap-2">
+            <h3 class="text-xl font-bold">${expr.keyword}</h3>
+            <span class="mb-0.5 text-xs text-gray-500 italic">${expr.type}</span>
+          </div>
+          <p>${expr.definition}</p>
+        </div>
+      `
+          )
+          .join("");
+
+        const compoundDivs = resultsSection.children;
+        Array.from(compoundDivs).forEach((div, index) => {
+          setTimeout(
+            () => {
+              div.classList.remove("opacity-0", "translate-y-[-10px]");
+            },
+            100 * (index + 1)
+          );
+        });
+      }
+
+      // Si hay palabras simples, se consultará la RAE para cada una.
+      if (simpleWords.length > 0) {
+        // Para cada palabra, consulta la API de la RAE.
+        const definitionsResults = await Promise.all(
+          simpleWords.map(async (item) => {
+            try {
+              const res = await fetch("/api/rae", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ word: item.keyword }),
+              });
+              return await res.json();
+            } catch (err) {
+              return { word: item.keyword, error: err.details };
+            }
+          })
+        );
+
+        // Procesar y formatear las definiciones para incluir sinónimos y antónimos en sublistas.
+        definitionsResults.forEach((item) => {
+          if (Array.isArray(item.definitions)) {
+            item.definitions = item.definitions.map((def) => {
+              def = def
+                .replace(/(?<=[a-zA-Z])[\d]+/g, "")
+                .replace(/[\d]+(?=[a-zA-Z])/g, "");
+              let mainDef = def;
+              let synonyms = "";
+              let antonyms = "";
+              if (def.includes("Sin.:")) {
+                const parts = def.split("Sin.:");
+                mainDef = parts[0].trim();
+                const rest = parts[1].trim();
+                if (rest.includes("Antambién")) {
+                  const subparts = rest.split("Antambién");
+                  synonyms = subparts[0].trim();
+                  antonyms = subparts[1].trim();
+                } else {
+                  synonyms = rest;
+                }
+              } else if (def.includes("Antambién")) {
+                const parts = def.split("Antambién");
+                mainDef = parts[0].trim();
+                antonyms = parts[1].trim();
+              }
+              let html = `<li>${mainDef}`;
+              if (synonyms || antonyms) {
+                html += `<ul class="list-[circle] pl-8">`;
+                if (synonyms) {
+                  html += `<li><span class="font-semibold">Sinónimos:</span> ${synonyms}</li>`;
+                }
+                if (antonyms) {
+                  html += `<li><span class="font-semibold">Antónimos:</span> ${antonyms}</li>`;
+                }
+                html += `</ul>`;
+              }
+              html += `</li>`;
+              return html;
+            });
+          }
+        });
+
+        // Mostrar resultados de palabras simples.
+        definitionsResults.forEach((item, index) => {
+          const div = document.createElement("div");
+          div.className =
+            "result-item mb-4 p-4 transition-all duration-500 opacity-0 translate-y-[-10px]";
+          if (item.error) {
+            div.innerHTML = `
             <h3 class="text-xl font-bold">${item.word}</h3>
             <p class="text-red-600">Error: ${item.error}</p>
           `;
-        } else {
-          div.innerHTML = `
+          } else {
+            div.innerHTML = `
             <a href="https://dle.rae.es/${item.word}" target="_blank">
               <h3 class="text-xl font-bold underline">${item.word}</h3>
             </a>
@@ -312,12 +402,16 @@ import Spinner from "./icon/Spinner.astro";
               ${item.definitions.join("")}
             </ul>
           `;
-        }
-        resultsSection.appendChild(div);
-        setTimeout(() => {
-          div.classList.remove("opacity-0", "translate-y-[-10px]");
-        }, 100 * index);
-      });
+          }
+          resultsSection?.appendChild(div);
+          setTimeout(() => {
+            div.classList.remove("opacity-0", "translate-y-[-10px]");
+          }, 100 * index);
+        });
+      }
+
+      // Cambiar la altura del section para subir el buscador.
+      searchSection.classList.add("move-up");
     } catch (error) {
       console.error("Error en la validación o búsqueda:", error);
       errorMessage.innerText =
