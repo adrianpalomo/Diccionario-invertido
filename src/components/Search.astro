@@ -32,8 +32,7 @@ import Logo from "./Logo.astro";
           disabled
           class="rounded-full bg-black p-2 text-white transition-colors duration-300 hover:cursor-pointer hover:bg-gray-600 disabled:hover:cursor-not-allowed dark:bg-gray-200 dark:text-black dark:hover:bg-gray-400"
         >
-          <SearchIcon id="searchIcon" class="block h-7 w-auto" />
-          <Spinner id="spinner" class="hidden h-5 w-auto animate-spin" />
+          <SearchIcon class="block h-7 w-auto" />
         </button>
       </div>
       <div
@@ -43,7 +42,10 @@ import Logo from "./Logo.astro";
       </div>
     </div>
   </form>
-  <div id="errorMessage" class="mt-2 text-center text-red-600"></div>
+  <div class="flex flex-col items-center justify-center h-18">
+    <Spinner id="spinner" class="text-theme-primary dark:text-theme-text-light2 mt-3 hidden size-12" />
+    <div id="errorMessage" class="mt-2 text-center text-red-600"></div>
+  </div>
 </section>
 
 <style>
@@ -51,7 +53,7 @@ import Logo from "./Logo.astro";
     transition: height 0.5s ease-in-out;
   }
   #searchSection.move-up {
-    height: 30dvh !important;
+    height: 35dvh !important;
   }
 
   .dropdown-item {
@@ -70,7 +72,6 @@ import Logo from "./Logo.astro";
   const spinner = document.getElementById("spinner");
   const searchContainer = document.getElementById("searchContainer");
   const errorMessage = document.getElementById("errorMessage");
-  const searchIcon = document.getElementById("searchIcon");
   const recentSearchesEl = document.getElementById("recentSearches");
   import { PLACEHOLDERS } from "../consts/placeholders.ts";
 
@@ -144,12 +145,12 @@ import Logo from "./Logo.astro";
   const updateButtonState = () => {
     if (input.value.trim().length > 0) {
       button.disabled = false;
-      button.classList.remove("bg-gray-400");
+      button.classList.remove("bg-gray-400", "dark:bg-gray-600");
       button.classList.add("bg-black", "hover:bg-black/70");
     } else {
       button.disabled = true;
       button.classList.remove("bg-black", "hover:bg-black/70");
-      button.classList.add("bg-gray-400");
+      button.classList.add("bg-gray-400", "dark:bg-gray-600");
     }
   };
 
@@ -247,11 +248,10 @@ import Logo from "./Logo.astro";
     // Desactivar el botón durante la validación y búsqueda.
     button.disabled = true;
     button.classList.remove("bg-black", "hover:bg-black/70");
-    button.classList.add("bg-gray-400");
+    button.classList.add("bg-gray-400", "dark:bg-gray-600");
 
-    // Mostrar el spinner y ocultar el SearchIcon.
+    // Mostrar el spinner
     spinner.classList.remove("hidden");
-    searchIcon.classList.add("hidden");
 
     try {
       // Llamada a la IA (endpoint combinado).
@@ -268,7 +268,6 @@ import Logo from "./Logo.astro";
           data.invalid_reason ||
           "Consulta inválida. Prueba con una definición más clara.";
         spinner.classList.add("hidden");
-        searchIcon.classList.remove("hidden");
         resultsSection.innerHTML = "";
         return;
       }
@@ -419,7 +418,6 @@ import Logo from "./Logo.astro";
     } finally {
       updateButtonState();
       spinner.classList.add("hidden");
-      searchIcon.classList.remove("hidden");
     }
   });
 
